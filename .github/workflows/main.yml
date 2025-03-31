@@ -1,0 +1,27 @@
+name: Preparant per producció
+run-name: ${{ github.actor }} està pujant l'aplicació a PROD 🚀
+
+on: [push]
+
+jobs:
+  Pujar-a-produccio-amb-SCP:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtenint el codi del repositori
+        uses: actions/checkout@v4
+
+      - name: SCP a producció
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/prod_key.pem
+          chmod 600 ~/prod_key.pem
+          cd ${{ github.workspace }}
+          mkdir -p ./web
+          echo "Action desplegant a producció" > ./web/last_deploy.txt
+          date >> ./web/last_deploy.txt
+          scp -r -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "~/prod_key.pem" ./web/* \
+            ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }}:/home/a23gerarimar/web/a23gerarimar.daw.inspedralbes.cat/public_html/ghactions-GerardArias
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "~/prod_key.pem" \
+            ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }} "chmod -R 755 /home/a23gerarimar/web/a23gerarimar.daw.inspedralbes.cat/public_html/ghactions-GerardArias"
+
+      - name: Mostrar estat del job
+        run: echo "🍏 This job's status is ${{ job.status }}."
